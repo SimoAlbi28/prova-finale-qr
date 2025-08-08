@@ -3,48 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Manutenzione</title>
+  <title>Prova</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script defer>
-    // Funzione per prendere parametri URL
-    function getParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      // Prendi l'id cartella dall'URL
-      const folderId = getParam("id");
-      // Prendi tutte le cartelle da localStorage
-      const folders = JSON.parse(localStorage.getItem("folders") || "{}");
-      // Prendi l'anno della cartella selezionata
-      const annoCartella = folderId && folders[folderId] ? folders[folderId].anno : null;
-
-      if (annoCartella) {
-        const header = document.getElementById("tit1");
-        const annoDiv = document.createElement("div");
-        annoDiv.textContent = `Anno: ${annoCartella}`;
-        annoDiv.style.fontSize = "1.2rem";
-        annoDiv.style.color = "white";
-        annoDiv.style.marginTop = "5px";
-
-        header.appendChild(annoDiv);
-      }
-    });
-
-    // Blocca zoom touch su mobile (pinch)
-    document.addEventListener('touchmove', function (event) {
-      if (event.scale !== 1) {
-        event.preventDefault();
-      }
-    }, { passive: false });
-
-    document.addEventListener('gesturestart', function (event) {
-      event.preventDefault();
-    });
-  </script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -54,11 +16,10 @@
 
   <div id="buttons-container">
     <div class="row-btns">
-      <button onclick="location.href='home.html'" id="btn-home" class="btn-home">🏠 Home</button>
-      <button id="create-macchinario" class="btn-blue">➕ Crea</button>
       <button id="start-scan" class="btn-green">📷 Avvia </button>
       <button id="stop-scan" class="btn-red" disabled> Chiudi 📷</button>
     </div>
+    <button id="create-macchinario" class="btn-blue">➕ Crea</button>
   </div>
 
   <div id="reader" class="hidden"></div>
