@@ -325,6 +325,50 @@ function renderMacchinari(highlightId = null) {
     listContainer.appendChild(box);
   });
 
+  // *** BOTTONE COPIA TUTTO ***
+  const oldBtn = document.getElementById("btn-copia-tutto");
+  if (oldBtn) oldBtn.remove();
+
+  const copiaTuttoBtn = document.createElement("button");
+  copiaTuttoBtn.id = "btn-copia-tutto";
+  copiaTuttoBtn.textContent = "📋 Copia Tutto";
+  copiaTuttoBtn.style.margin = "10px auto";
+  copiaTuttoBtn.style.display = "block";
+  copiaTuttoBtn.style.padding = "8px 16px";
+  copiaTuttoBtn.style.backgroundColor = "#4CAF50";
+  copiaTuttoBtn.style.color = "white";
+  copiaTuttoBtn.style.border = "none";
+  copiaTuttoBtn.style.borderRadius = "6px";
+  copiaTuttoBtn.style.cursor = "pointer";
+
+  copiaTuttoBtn.onclick = () => {
+    let testoCompleto = "";
+
+    const macchinariOrdinati = Object.values(savedMacchinari).sort((a,b) => a.nome.localeCompare(b.nome));
+
+    macchinariOrdinati.forEach(m => {
+      testoCompleto += `• ${m.nome.toUpperCase()}\n`;
+      if (m.note && m.note.length > 0) {
+        const noteOrdinate = m.note.slice().sort((a,b) => b.data.localeCompare(a.data));
+        noteOrdinate.forEach(n => {
+          const d = formatData(n.data);
+          testoCompleto += `- [${d}]:  ${n.desc};\n`;
+        });
+      } else {
+        testoCompleto += "- Nessuna nota;\n";
+      }
+      testoCompleto += "\n";
+    });
+
+    navigator.clipboard.writeText(testoCompleto).then(() => {
+      alert("✅ Tutte le manutenzioni e note copiate!");
+    }).catch(() => {
+      alert("❌ Errore durante la copia degli appunti.");
+    });
+  };
+
+  listContainer.appendChild(copiaTuttoBtn);
+
   if (highlightId) {
     const highlightBox = document.querySelector(`.macchinario[data-id="${highlightId}"]`);
     if (highlightBox) {
