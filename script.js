@@ -361,7 +361,7 @@ function renderMacchinari(highlightId = null) {
     });
 
     navigator.clipboard.writeText(testoCompleto).then(() => {
-      alert("✅ Tutte le manutenzioni e note copiate!");
+      alert("✅ Tutte copiato negli appunti!");
     }).catch(() => {
       alert("❌ Errore durante la copia degli appunti.");
     });
