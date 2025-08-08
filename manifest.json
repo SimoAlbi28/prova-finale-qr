@@ -1,6 +1,6 @@
 {
-  "name": "Manutenzione",
-  "short_name": "Manutenzione",
+  "name": "Prova",
+  "short_name": "Prova",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#d0e7ff",
