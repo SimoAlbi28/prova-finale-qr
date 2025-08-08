@@ -1,6 +1,9 @@
 const CACHE_NAME = "Manutenzioni";
 const urlsToCache = [
   "./",
+  "./home.html",
+  "./home.css",
+  "./home.js",
   "./index.html",
   "./style.css",
   "./script.js",
