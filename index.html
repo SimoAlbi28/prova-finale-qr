@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Prova</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header id="tit1">
+    <div class="title-top">CARTE DOZIO</div>
+  </header>
+
+  <div id="buttons-container">
+    <div class="row-btns">
+      <button id="start-scan" class="btn-green">📷 Avvia </button>
+      <button id="stop-scan" class="btn-red" disabled> Chiudi 📷</button>
+    </div>
+    <button id="create-macchinario" class="btn-blue">➕ Crea</button>
+  </div>
+
+  <div id="reader" class="hidden"></div>
+
+  <div id="search-box">
+    <label for="search-input">🔎 Cerca:</label>
+    <input id="search-input" type="text" placeholder="Inserire Nome..." autocomplete="off" />
+    <button id="show-all-btn" class="btn-blue">Mostra tutti</button>
+  </div>
+
+  <h2>⚙️ Registro Manutenzioni ⚙️</h2>
+  <div id="macchinari-list"></div>
+
+  <div id="nomeModal" class="modal hidden">
+    <div class="modal-content">
+      <label for="nomeInput">Nome:</label>
+      <input type="text" id="nomeInput" autocomplete="off" />
+      <div class="modal-buttons">
+        <button id="btnConferma" class="btn-green">Conferma</button>
+        <button id="btnAnnulla" class="btn-red">Annulla</button>
+      </div>
+      <p id="erroreNome" style="color:red; display:none; margin-top:8px;">⚠️ Nome già esistente!</p>
+    </div>
+  </div>
+</body>
+</html>
