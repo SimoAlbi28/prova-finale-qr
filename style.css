@@ -10,8 +10,10 @@ body {
   min-height: 100vh;
   justify-content: flex-start;
   align-items: center;
+  box-sizing: border-box; /* aggiunto per sicurezza */
 }
 
+/* TITOLI */
 #tit1 {
   color: white;
   background-color: black;
@@ -23,7 +25,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 40px; /* spazio aumentato sotto il titolo */
+  margin-bottom: 40px;
 }
 
 .title-top {
@@ -40,22 +42,119 @@ h2 {
   user-select: none;
 }
 
+/* CONTAINER BOTTONI PRINCIPALI */
 #buttons-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(90px, 150px));
+  grid-template-rows: repeat(2, 40px);
+  gap: 12px 20px;
   justify-content: center;
-  gap: 15px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: 25px;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-  position: relative;
+  max-width: 100vw; /* da 320px a full viewport width per evitare overflow */
+  margin: 0 auto 25px auto;
+  padding: 0 10px; /* padding per evitare che tocchi bordi schermo */
+  box-sizing: border-box;
+  overflow-x: hidden; /* niente scroll orizzontale */
+}
+
+/* media query per schermi piccoli - meglio flex per botttoni */
+@media (max-width: 480px) {
+  #buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 15px;
+    justify-content: center;
+  }
 }
 
 .row-btns {
   display: flex;
-  gap: 15px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  width: 100%;
+  justify-content: center;
+}
+
+/* BOTTONI */
+#btn-home {
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  border-radius: 5px;
+  border: 1px solid black;
+  min-width: 65px;
+  max-width: 90px;
+  font-size: 12px;
+  padding: 5px 8px;
+  white-space: nowrap;
+  user-select: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+#btn-home:hover {
+  background-color: #ffffff7e;
+}
+
+#create-macchinario {
+  order: 1;
+  border: 1px solid black !important;
+  background-color: #3498db;
+  color: white;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  min-width: 65px;
+  max-width: 90px;
+  font-size: 12px;
+  transition: background-color 0.3s ease;
+  margin: 0 auto;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+#start-scan {
+  font-size: 12px;
+  padding: 5px 8px;
+  min-width: 65px;
+  max-width: 90px;
+  height: 32px;
+  box-sizing: border-box;
+  border: 1px solid black;
+  border-radius: 5px;
+  background-color: #2ecc71;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+#start-scan:hover {
+  background-color: #27ae60;
+}
+
+#stop-scan {
+  font-size: 12px;
+  padding: 5px 8px;
+  min-width: 65px;
+  max-width: 90px;
+  height: 32px;
+  box-sizing: border-box;
+  border: 1px solid black;
+  border-radius: 5px;
+  background-color: #e74c3c;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+#stop-scan:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+#stop-scan:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* Fix visivo per centrare il bottone Crea */
@@ -73,8 +172,10 @@ h2 {
   font-size: 13px;
   transition: background-color 0.3s ease;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
+/* bottone crea manuale */
 #btn-create-manual {
   margin-top: 12px;
   background-color: #3498db;
@@ -88,6 +189,7 @@ h2 {
   max-width: 130px;
   font-size: 13px;
   transition: background-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 #btn-create-manual:hover {
@@ -105,8 +207,37 @@ button {
   min-width: 60px;
   max-width: 130px;
   transition: background-color 0.3s ease;
+  box-sizing: border-box;
 }
 
+/* Bottone e container per i bottoni macchinario - fix overflow */
+.btns-macchinario {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap; /* vai a capo se serve */
+  max-width: 100vw; /* non più largo dello schermo */
+  box-sizing: border-box;
+  padding: 0 10px;
+  overflow-x: hidden; /* niente scroll orizzontale */
+}
+
+.btns-macchinario button {
+  flex: 0 0 auto; /* non cresce né si restringe */
+  max-width: 140px; /* max larghezza bottone */
+  min-width: 60px; /* min larghezza bottone */
+  width: 100%; /* su mobile prende tutta larghezza disponibile */
+  box-sizing: border-box;
+}
+
+@media(min-width: 480px) {
+  .btns-macchinario button {
+    width: auto; /* su desktop larghezza normale */
+  }
+}
+
+/* stile generico per toggle, note, scan buttons */
 .toggle-btn,
 .btns-note button,
 .note-form button,
@@ -117,10 +248,10 @@ button {
   min-width: 50px;
   max-width: 110px;
   border: 1px solid black;
+  box-sizing: border-box;
 }
 
 .btns-note,
-.btns-macchinario,
 #buttons-container,
 .nome-e-btn {
   display: flex;
@@ -129,15 +260,32 @@ button {
   flex-wrap: wrap;
 }
 
+/* bottoni home */
+#btn-home {
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  border-radius: 5px;
+  border: 1px solid black;
+  min-width: 85px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+#btn-home:hover {
+  background-color: #ffffff7e;
+}
+
 #btn-chiudi {
   background-color: #e67e22;
   color: white;
+  box-sizing: border-box;
 }
 
 .btn-red {
   background-color: #e74c3c;
   color: white;
   border: 1px solid black;
+  box-sizing: border-box;
 }
 
 .btn-red:hover {
@@ -148,6 +296,7 @@ button {
   background-color: #2ecc71;
   color: white;
   border: 1px solid black;
+  box-sizing: border-box;
 }
 
 .btn-green:hover {
@@ -155,9 +304,11 @@ button {
 }
 
 .btn-blue {
-  border-radius: 5px solid black;
+  border-radius: 5px;
+  border: 1px solid black;
   background-color: #3498db;
   color: white;
+  box-sizing: border-box;
 }
 
 .btn-blue:hover {
@@ -167,6 +318,8 @@ button {
 .btn-orange {
   background-color: orange;
   color: white;
+  border: 1px solid black;
+  box-sizing: border-box;
 }
 
 .btn-orange:hover {
@@ -177,16 +330,18 @@ button {
   width: 100%;
   max-width: 350px;
   margin: 0 auto 30px;
+  box-sizing: border-box;
 }
 
 #macchinari-list {
   width: 100%;
   max-width: 400px;
   margin: 0 auto 30px;
+  box-sizing: border-box;
 }
 
 .macchinario {
-  background-color: #b1b1b1;
+  background-color: #cecece;
   max-width: 400px;
   border: 3px solid black;
   border-radius: 10px;
@@ -194,6 +349,9 @@ button {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   text-align: center;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+  box-sizing: border-box;
 }
 
 .macchinario.highlight {
@@ -212,11 +370,13 @@ button {
   padding: 5px 10px;
   border-radius: 6px;
   border: 2px solid black;
+  box-sizing: border-box;
 }
 
 .nome-e-btn {
   gap: 15px;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .toggle-btn {
@@ -229,16 +389,18 @@ button {
   border-radius: 6px;
   user-select: none;
   transition: background-color 0.2s ease;
+  box-sizing: border-box;
 }
 
 .note-list {
   list-style: none;
   padding: 0;
   margin: 0 0 15px 0;
-  max-width: 380px;      /* limita larghezza lista */
+  max-width: 380px;
   margin-left: auto;
-  margin-right: auto;    /* centra lista nel contenitore */
-  text-align: left;      /* testo allineato a sinistra dentro la lista */
+  margin-right: auto;
+  text-align: left;
+  box-sizing: border-box;
 }
 
 .note-list li {
@@ -248,13 +410,13 @@ button {
   border-radius: 8px;
   margin-bottom: 12px;
   padding: 12px 12px 40px 12px;
-  padding-right: 45px;   /* spazio per checkbox sulla destra */
+  padding-right: 45px;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
   word-break: break-word;
   display: block;
-  box-sizing: border-box; /* fa sì che padding e border non sforino */
+  box-sizing: border-box;
 }
 
 .nota-data {
@@ -264,11 +426,13 @@ button {
   border-radius: 6px;
   display: inline-block;
   margin-bottom: 6px;
+  box-sizing: border-box;
 }
 
 .nota-desc {
   margin-top: 6px;
   white-space: pre-wrap;
+  box-sizing: border-box;
 }
 
 .btns-note {
@@ -277,11 +441,13 @@ button {
   right: 8px;
   display: flex;
   gap: 6px;
+  box-sizing: border-box;
 }
 
 .btns-note button.btn-blue {
   background-color: #3498db;
   color: white;
+  box-sizing: border-box;
 }
 
 .btns-note button.btn-blue:hover {
@@ -291,6 +457,7 @@ button {
 .btns-note button.btn-red {
   background-color: #e74c3c;
   color: white;
+  box-sizing: border-box;
 }
 
 .btns-note button.btn-red:hover {
@@ -304,6 +471,7 @@ button {
   max-width: 350px;
   margin: 0 auto 10px;
   text-align: left;
+  box-sizing: border-box;
 }
 
 .note-form label {
@@ -312,6 +480,7 @@ button {
   text-align: center;
   width: 100%;
   display: block;
+  box-sizing: border-box;
 }
 
 .note-form input[type="date"] {
@@ -343,6 +512,25 @@ button {
   justify-content: center;
   gap: 10px;
   margin-top: 8px;
+  flex-wrap: wrap;
+  max-width: 100vw;
+  box-sizing: border-box;
+  padding: 0 10px;
+  overflow-x: hidden;
+}
+
+.btns-macchinario button {
+  flex: 0 0 auto;
+  max-width: 140px;
+  min-width: 60px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media(min-width: 480px) {
+  .btns-macchinario button {
+    width: auto;
+  }
 }
 
 #search-box {
@@ -358,6 +546,7 @@ button {
   margin: 20px auto 10px;
   max-width: 95%;
   width: fit-content;
+  box-sizing: border-box;
 }
 
 #search-box label {
@@ -365,6 +554,7 @@ button {
   user-select: none;
   white-space: nowrap;
   font-size: 15px;
+  box-sizing: border-box;
 }
 
 #search-input {
@@ -377,6 +567,7 @@ button {
   border-radius: 8px;
   outline: none;
   transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 #search-input:focus {
@@ -392,6 +583,7 @@ button {
   color: white;
   cursor: pointer;
   user-select: none;
+  box-sizing: border-box;
 }
 
 #show-all-btn:hover {
@@ -406,6 +598,7 @@ button {
   justify-content: center;
   align-items: center;
   z-index: 9999;
+  box-sizing: border-box;
 }
 
 .modal.hidden {
@@ -419,12 +612,14 @@ button {
   min-width: 280px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.25);
   text-align: center;
+  box-sizing: border-box;
 }
 
 .modal-content label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
+  box-sizing: border-box;
 }
 
 .modal-content input[type="text"] {
@@ -446,16 +641,19 @@ button {
   display: flex;
   justify-content: center;
   gap: 15px;
+  box-sizing: border-box;
 }
 
 .modal-buttons button {
   min-width: 90px;
+  box-sizing: border-box;
 }
 
 .line-separator {
   height: 2px;
   background-color: black;
   margin: 12px 0;
+  box-sizing: border-box;
 }
 
 .titolo-note {
@@ -468,6 +666,7 @@ button {
   font-size: 16px;
   width: fit-content;
   margin: 10px auto 10px auto;
+  box-sizing: border-box;
 }
 
 /* ======= STILI BOTTONI COPIA NOTE PERSONALIZZATI ======= */
@@ -490,6 +689,7 @@ button {
   border: none;
   display: inline-block;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .btn-copia-note {
@@ -504,22 +704,20 @@ button {
   background-color: #64170d; /* rosso scuro */
 }
 
-
 .btn-indietro {
   background-color: #f87800; /* arancio */
 }
 
-
 .btn-copia-selezionate {
   background-color: #cb08fc; /* rosa */
 }
-
 
 /* Checkbox per selezione note */
 .checkbox-copia-note {
   transform: scale(1.3);
   margin-right: 8px;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 /* Container per i 4 bottoni copia note in colonna 2x2 */
@@ -530,7 +728,7 @@ button {
   justify-content: center;
   max-width: 280px;
   margin: 10px auto 20px auto;
-  /* mantiene il centro e spaziatura */
+  box-sizing: border-box;
 }
 
 /* Assicura che i bottoni abbiano la stessa larghezza */
@@ -547,6 +745,7 @@ button {
   right: 12px;
   transform: translateY(-50%) scale(1.3);
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 /* Quando il contenitore ha classe .modalita-copia attiva: mostra checkbox e nasconde bottoni */
@@ -560,36 +759,34 @@ button {
 }
 
 .note-list li {
-  border: 1px solid #ccc; /* bordo default */
+  border: 1px solid #ccc;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
 }
 
-.note-list li input[type="checkbox"]:checked {
-  /* serve solo a triggerare il selettore */
-}
-
-/* Usa un trucco CSS per cambiare stile del li quando checkbox è checked */
 .note-list li input[type="checkbox"]:checked ~ div,
 .note-list li input[type="checkbox"]:checked ~ .btns-note {
-  /* opzionale se vuoi stilizzare testo o bottoni */
+  /* niente al momento */
 }
 
-/* Il vero cambio di bordo esterno al li con :has() se browser supporta */
 .note-list li:has(input[type="checkbox"]:checked) {
   border-color: #444;
   box-shadow: 0 0 8px rgba(0,0,0,0.3);
 }
 
-#start-scan,
-#stop-scan,
-#create-macchinario {
-  font-size: 13px;
-  padding: 6px 12px;
-  min-width: 90px;
-  max-width: 130px;
-  height: 36px;
+#btn-home,
+.btn-green,
+.btn-red,
+.btn-blue {
+  min-width: 75px;
+  max-width: 110px;
+  font-size: 12px;
+  padding: 5px 8px;
+  height: auto;
   box-sizing: border-box;
+  white-space: nowrap;
 }
+
 
 #btn-conferma,
 #btn-annulla,
@@ -600,11 +797,32 @@ button {
 .btn-copia-selezionate {
   border: 1px solid black;
   border-radius: 5px;
+  box-sizing: border-box;
 }
 
 #btn-chiudi,
 #btn-rin {
   border: 1px solid black !important;
   border-radius: 5px !important;
+  box-sizing: border-box;
 }
 
+.btn-rinomina,
+.btn-chiudi,
+.btn-elimina-macchinario {
+  padding: 2px 6px; /* meno padding orizzontale */
+  min-width: auto; /* togli min-width che forza larghezza */
+  max-width: none; /* togli max-width */
+  width: auto; /* larghezza automatica al contenuto */
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* container che li contiene */
+.nome-e-btn {
+  overflow-x: auto; /* scroll orizzontale se serve */
+  -webkit-overflow-scrolling: touch; /* scroll fluido su iOS */
+  max-width: 100%; 
+  padding: 0 6px; /* piccolo padding interno */
+  box-sizing: border-box;
+}
