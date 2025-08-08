@@ -4,118 +4,217 @@ const startBtn = document.getElementById("start-scan");
 const stopBtn = document.getElementById("stop-scan");
 const searchInput = document.getElementById("search-input");
 const showAllBtn = document.getElementById("show-all-btn");
-const folderSelect = document.getElementById("folder-select"); // selezione cartella, devi aggiungerlo in HTML
-const createFolderBtn = document.getElementById("create-folder"); // bottone crea cartella, devi aggiungerlo in HTML
 
 let searchFilter = "";
-let currentFolder = "Tutte"; // cartella selezionata, "Tutte" = nessun filtro
-
-// Carica macchinari e cartelle da localStorage
 let savedMacchinari = JSON.parse(localStorage.getItem("macchinari") || "{}");
-let savedCartelle = JSON.parse(localStorage.getItem("cartelle") || "[]");
-
-// Inizializza html5QrCode (per scansione)
 let html5QrCode;
 let copiaNoteActive = false;
 let notaInModifica = null;
 
-// --------- GESTIONE CARTELLE ---------
+// --- MODAL PERSONALIZZATO PER CONFERME ---
+function mostraModalConferma(messaggio, onConferma, onAnnulla) {
+  let oldModal = document.getElementById("custom-confirm-modal");
+  if (oldModal) oldModal.remove();
 
-function salvaCartelle() {
-  localStorage.setItem("cartelle", JSON.stringify(savedCartelle));
+  const overlay = document.createElement("div");
+  overlay.id = "custom-confirm-modal";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100vw";
+  overlay.style.height = "100vh";
+  overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+  overlay.style.display = "flex";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.zIndex = "10000";
+
+  const box = document.createElement("div");
+  box.style.backgroundColor = "#fff";
+  box.style.padding = "20px";
+  box.style.borderRadius = "8px";
+  box.style.width = "320px";
+  box.style.maxWidth = "90%";
+  box.style.textAlign = "center";
+  box.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
+  box.style.fontFamily = "Segoe UI, Tahoma, Geneva, Verdana, sans-serif";
+
+  const msg = document.createElement("p");
+  msg.style.marginBottom = "20px";
+  msg.style.whiteSpace = "pre-wrap";
+  msg.textContent = messaggio;
+  box.appendChild(msg);
+
+  const btnContainer = document.createElement("div");
+  btnContainer.style.display = "flex";
+  btnContainer.style.justifyContent = "center";
+  btnContainer.style.gap = "15px";
+
+  const btnAnnulla = document.createElement("button");
+  btnAnnulla.textContent = "Annulla";
+  btnAnnulla.style.padding = "8px 16px";
+  btnAnnulla.style.border = "none";
+  btnAnnulla.style.backgroundColor = "#f44336";
+  btnAnnulla.style.color = "white";
+  btnAnnulla.style.borderRadius = "4px";
+  btnAnnulla.style.cursor = "pointer";
+  btnAnnulla.onclick = () => {
+    document.body.removeChild(overlay);
+    if (onAnnulla) onAnnulla();
+  };
+
+  const btnConferma = document.createElement("button");
+  btnConferma.textContent = "Conferma";
+  btnConferma.style.padding = "8px 16px";
+  btnConferma.style.border = "none";
+  btnConferma.style.backgroundColor = "#4CAF50";
+  btnConferma.style.color = "white";
+  btnConferma.style.borderRadius = "4px";
+  btnConferma.style.cursor = "pointer";
+  btnConferma.onclick = () => {
+    document.body.removeChild(overlay);
+    if (onConferma) onConferma();
+  };
+
+  btnContainer.appendChild(btnAnnulla);
+  btnContainer.appendChild(btnConferma);
+  box.appendChild(btnContainer);
+  overlay.appendChild(box);
+
+  document.body.appendChild(overlay);
+}
+// --- FINE MODAL ---
+
+function createLineSeparator() {
+  const line = document.createElement("div");
+  line.className = "line-separator";
+  return line;
 }
 
-function aggiungiCartella(nome) {
-  nome = nome.trim();
-  if (!nome) return false;
-  if (savedCartelle.includes(nome)) return false;
-  savedCartelle.push(nome);
-  salvaCartelle();
-  aggiornaSelectCartelle();
-  return true;
+function formatData(d) {
+  const [yyyy, mm, dd] = d.split("-");
+  return `${dd}/${mm}/${yyyy.slice(2)}`;
 }
 
-function eliminaCartella(nome) {
-  // Rimuovi cartella e sposta macchinari in "Senza Cartella"
-  savedCartelle = savedCartelle.filter(c => c !== nome);
+function creaAreaCopiaNote(macchinarioBox, id, note) {
+  const oldArea = macchinarioBox.querySelector(".copia-note-area");
+  if (oldArea) oldArea.remove();
 
-  for (const id in savedMacchinari) {
-    if (savedMacchinari[id].cartella === nome) {
-      savedMacchinari[id].cartella = "Senza Cartella";
-    }
+  const area = document.createElement("div");
+  area.className = "copia-note-area";
+  area.style.marginTop = "10px";
+  area.style.textAlign = "center";
+
+  const btnCopiaNote = document.createElement("button");
+  btnCopiaNote.textContent = "📋 Copia";
+  btnCopiaNote.className = "btn-copia-note";
+
+  const selezioneDiv = document.createElement("div");
+  selezioneDiv.style.display = "none";
+  selezioneDiv.style.marginTop = "10px";
+
+  const btnSelezionaTutte = document.createElement("button");
+  btnSelezionaTutte.textContent = "✔️ Tutte";
+  btnSelezionaTutte.className = "btn-seleziona-tutte";
+
+  const btnDeselezionaTutte = document.createElement("button");
+  btnDeselezionaTutte.textContent = "❌ Tutte";
+  btnDeselezionaTutte.className = "btn-deseleziona-tutte";
+
+  const btnIndietro = document.createElement("button");
+  btnIndietro.textContent = "🔙 Indietro";
+  btnIndietro.className = "btn-indietro";
+
+  const btnCopiaSelezionate = document.createElement("button");
+  btnCopiaSelezionate.textContent = "📋 Copia";
+  btnCopiaSelezionate.className = "btn-copia-selezionate";
+
+  const btnContainer = document.createElement("div");
+  btnContainer.style.marginTop = "8px";
+  btnContainer.style.display = "flex";
+  btnContainer.style.justifyContent = "center";
+  btnContainer.style.flexWrap = "wrap";
+  btnContainer.style.gap = "6px";
+
+  btnContainer.appendChild(btnSelezionaTutte);
+  btnContainer.appendChild(btnDeselezionaTutte);
+  btnContainer.appendChild(btnIndietro);
+  btnContainer.appendChild(btnCopiaSelezionate);
+
+  selezioneDiv.appendChild(btnContainer);
+  area.appendChild(btnCopiaNote);
+  area.appendChild(selezioneDiv);
+  macchinarioBox.appendChild(area);
+
+  function updateNoteButtonsAndCheckboxes(showCheckboxes) {
+    const liNotes = macchinarioBox.querySelectorAll(".note-list li");
+    liNotes.forEach((li, i) => {
+      const checkbox = li.querySelector("input[type=checkbox]");
+      const btns = li.querySelector(".btns-note");
+      if (checkbox) checkbox.style.display = showCheckboxes ? "inline-block" : "none";
+      if (btns) btns.style.display = showCheckboxes ? "none" : "flex";
+    });
   }
 
-  salvaCartelle();
-  salvaMacchinari();
-  aggiornaSelectCartelle();
-  renderMacchinari();
-}
-
-function aggiornaSelectCartelle() {
-  if (!folderSelect) return;
-
-  // Prima salva la cartella corrente (se esiste)
-  let oldFolder = currentFolder;
-
-  folderSelect.innerHTML = "";
-  // Aggiungo "Tutte" e "Senza Cartella" come opzioni fisse
-  const tutteOpt = document.createElement("option");
-  tutteOpt.value = "Tutte";
-  tutteOpt.textContent = "🗂️ Tutte";
-  folderSelect.appendChild(tutteOpt);
-
-  const senzaOpt = document.createElement("option");
-  senzaOpt.value = "Senza Cartella";
-  senzaOpt.textContent = "📂 Senza Cartella";
-  folderSelect.appendChild(senzaOpt);
-
-  savedCartelle.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    folderSelect.appendChild(opt);
+  btnCopiaNote.addEventListener("click", () => {
+    btnCopiaNote.style.display = "none";
+    selezioneDiv.style.display = "block";
+    updateNoteButtonsAndCheckboxes(true);
   });
 
-  // Ripristina selezione precedente se possibile
-  if (savedCartelle.includes(oldFolder) || oldFolder === "Tutte" || oldFolder === "Senza Cartella") {
-    folderSelect.value = oldFolder;
-    currentFolder = oldFolder;
-  } else {
-    folderSelect.value = "Tutte";
-    currentFolder = "Tutte";
-  }
-}
+  btnIndietro.addEventListener("click", () => {
+    selezioneDiv.style.display = "none";
+    btnCopiaNote.style.display = "inline-block";
+    updateNoteButtonsAndCheckboxes(false);
+  });
 
-// --------- FUNZIONI MACCHINARI ---------
+  btnSelezionaTutte.addEventListener("click", () => {
+    macchinarioBox.querySelectorAll(".note-list input[type=checkbox]").forEach(cb => cb.checked = true);
+  });
 
-function salvaMacchinari() {
-  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
-}
+  btnDeselezionaTutte.addEventListener("click", () => {
+    macchinarioBox.querySelectorAll(".note-list input[type=checkbox]").forEach(cb => cb.checked = false);
+  });
 
-function salvaMacchinario(id, nome, cartella = "Senza Cartella") {
-  if (!savedMacchinari[id]) {
-    savedMacchinari[id] = { nome, note: [], expanded: true, cartella };
-  } else {
-    savedMacchinari[id].nome = nome;
-    savedMacchinari[id].cartella = cartella;
-  }
-  salvaMacchinari();
+  btnCopiaSelezionate.addEventListener("click", () => {
+    const checkboxes = macchinarioBox.querySelectorAll(".note-list input[type=checkbox]:checked");
+    const checkedIndexes = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+    if (checkedIndexes.length === 0) {
+      alert("Seleziona almeno una nota da copiare.");
+      return;
+    }
+
+    const nomeMacchinario = savedMacchinari[id].nome;
+
+    const testoDaCopiare = `${nomeMacchinario.toUpperCase()}\n\n` + 
+      checkedIndexes.map(i => {
+        const n = note[i];
+        return `- [${formatData(n.data)}]: ${n.desc};`;
+      }).join("\n");
+
+
+    navigator.clipboard.writeText(testoDaCopiare).then(() => {
+      alert("✅ Note copiate!");
+      selezioneDiv.style.display = "none";
+      btnCopiaNote.style.display = "inline-block";
+      updateNoteButtonsAndCheckboxes(false);
+    }).catch(() => {
+      alert("Errore nella copia degli appunti.");
+    });
+  });
 }
 
 function renderMacchinari(highlightId = null) {
   listContainer.innerHTML = "";
 
-  // Filtro per ricerca
-  const filtered = Object.entries(savedMacchinari).filter(([_, data]) => {
-    // filtro nome
-    if (!data.nome.toLowerCase().startsWith(searchFilter.toLowerCase())) return false;
-    // filtro cartella
-    if (currentFolder === "Tutte") return true;
-    if (currentFolder === "Senza Cartella") return !data.cartella || data.cartella === "Senza Cartella";
-    return data.cartella === currentFolder;
-  });
+  const filtered = Object.entries(savedMacchinari).filter(([_, data]) =>
+    data.nome.toLowerCase().startsWith(searchFilter.toLowerCase())
+  );
 
-  const sorted = filtered.sort((a, b) => a[1].nome.localeCompare(b[1].nome));
+  const sorted = filtered.sort((a, b) =>
+    a[1].nome.localeCompare(b[1].nome)
+  );
 
   sorted.forEach(([id, data]) => {
     const expanded = data.expanded;
@@ -124,7 +223,7 @@ function renderMacchinari(highlightId = null) {
     box.className = "macchinario";
     box.setAttribute("data-id", id);
     box.innerHTML = `
-      <h3>${data.nome} <small style="font-weight:normal; font-size:0.7em; color:#666;">[${data.cartella || "Senza Cartella"}]</small></h3>
+      <h3>${data.nome}</h3>
       <div class="nome-e-btn">
         <button class="toggle-btn" onclick="toggleDettagli('${id}')">
           ${expanded ? "🔽" : "🔼"}
@@ -134,6 +233,8 @@ function renderMacchinari(highlightId = null) {
 
     if (expanded) {
       box.appendChild(createLineSeparator());
+
+      // Qui invertito: prima inserimento note poi lista note
 
       // Inserimento note
       const insertNoteTitle = document.createElement("h4");
@@ -148,18 +249,16 @@ function renderMacchinari(highlightId = null) {
         <input type="date" id="data-${id}">
         <label>Descrizione (max 300):</label>
         <input type="text" id="desc-${id}" maxlength="300">
-        <label>Cartella:</label>
-        <select id="cartella-${id}">
-          ${generaOpzioniCartelle(data.cartella)}
-        </select>
         <div style="text-align:center; margin-top:10px;">
           <button class="btn-green" onclick="aggiungiNota('${id}')">Conferma</button>
         </div>
       `;
 
       box.appendChild(noteForm);
+
       box.appendChild(createLineSeparator());
 
+      // Lista note e area copia note solo se ci sono note
       if (data.note && data.note.length > 0) {
         const noteTitle = document.createElement("h4");
         noteTitle.textContent = "Note";
@@ -169,7 +268,9 @@ function renderMacchinari(highlightId = null) {
         const noteList = document.createElement("ul");
         noteList.className = "note-list";
 
-        const notesSorted = (data.note || []).sort((a, b) => b.data.localeCompare(a.data));
+        const notesSorted = (data.note || []).sort((a, b) =>
+          b.data.localeCompare(a.data)
+        );
 
         notesSorted.forEach((nota, index) => {
           const li = document.createElement("li");
@@ -236,19 +337,18 @@ function renderMacchinari(highlightId = null) {
   }
 }
 
-function generaOpzioniCartelle(selezionata) {
-  let options = `<option value="Senza Cartella"${selezionata === "Senza Cartella" ? " selected" : ""}>📂 Senza Cartella</option>`;
-  savedCartelle.forEach(c => {
-    options += `<option value="${c}"${selezionata === c ? " selected" : ""}>${c}</option>`;
-  });
-  return options;
+function salvaMacchinario(id, nome) {
+  if (!savedMacchinari[id]) {
+    savedMacchinari[id] = { nome, note: [], expanded: true };
+  } else {
+    savedMacchinari[id].nome = nome;
+  }
+  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
 }
-
-// Tutte le tue funzioni macchinari (rinomina, elimina, toggleDettagli, ecc) restano uguali tranne salvaMacchinario che ora supporta cartella
 
 function toggleDettagli(id) {
   savedMacchinari[id].expanded = !savedMacchinari[id].expanded;
-  salvaMacchinari();
+  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
   renderMacchinari();
 }
 
@@ -266,7 +366,7 @@ function rinominaMacchinario(id) {
   }
 
   savedMacchinari[id].nome = nuovoNome;
-  salvaMacchinari();
+  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
   renderMacchinari();
 }
 
@@ -276,35 +376,33 @@ function eliminaMacchinario(id) {
     `Sei sicuro di voler eliminare "${nome}"?`,
     () => {
       delete savedMacchinari[id];
-      salvaMacchinari();
+      localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
       renderMacchinari();
     },
-    () => { }
+    () => {
+      // Annullato: niente
+    }
   );
 }
 
 function aggiungiNota(id) {
   const data = document.getElementById(`data-${id}`).value;
   const desc = document.getElementById(`desc-${id}`).value.trim();
-  const cartella = document.getElementById(`cartella-${id}`).value || "Senza Cartella";
   if (!data || !desc) return;
 
   if (notaInModifica && notaInModifica.id === id) {
+    // MODIFICA
     savedMacchinari[id].note[notaInModifica.index] = { data, desc };
     notaInModifica = null;
   } else {
+    // AGGIUNGI NUOVA
     savedMacchinari[id].note = savedMacchinari[id].note || [];
     savedMacchinari[id].note.push({ data, desc });
   }
 
-  // Aggiorna anche la cartella del macchinario se cambiata qui
-  if (savedMacchinari[id].cartella !== cartella) {
-    savedMacchinari[id].cartella = cartella;
-  }
-
   document.getElementById(`data-${id}`).value = "";
   document.getElementById(`desc-${id}`).value = "";
-  salvaMacchinari();
+  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
   renderMacchinari();
 }
 
@@ -313,11 +411,13 @@ function modificaNota(id, index) {
   const descInput = document.getElementById(`desc-${id}`);
   const nota = savedMacchinari[id].note[index];
 
+  // Se stai già modificando questa stessa nota → svuota e annulla
   if (notaInModifica && notaInModifica.id === id && notaInModifica.index === index) {
     dataInput.value = "";
     descInput.value = "";
     notaInModifica = null;
   } else {
+    // Altrimenti avvia modifica
     dataInput.value = nota.data;
     descInput.value = nota.desc;
     notaInModifica = { id, index };
@@ -333,14 +433,15 @@ function eliminaNota(id, index) {
     `Vuoi davvero eliminare la nota del ${formatData(nota.data)}?\n\n"${descBreve}"`,
     () => {
       savedMacchinari[id].note.splice(index, 1);
-      salvaMacchinari();
+      localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
       renderMacchinari();
     },
-    () => { }
+    () => {
+      // Annullato: niente
+    }
   );
 }
 
-// Scansione QR e gestione macchinari rimane invariata
 function startScan() {
   reader.classList.remove("hidden");
   startBtn.disabled = true;
@@ -371,8 +472,7 @@ function startScan() {
             alert("⚠️ Nome già esistente. Inserisci un nome diverso.");
             chiediNome();
           } else {
-            // Default cartella "Senza Cartella"
-            salvaMacchinario(qrCodeMessage, nome, "Senza Cartella");
+            salvaMacchinario(qrCodeMessage, nome);
             renderMacchinari(qrCodeMessage);
           }
         }
@@ -413,26 +513,6 @@ showAllBtn.addEventListener("click", () => {
   renderMacchinari();
 });
 
-if (folderSelect) {
-  folderSelect.addEventListener("change", () => {
-    currentFolder = folderSelect.value;
-    renderMacchinari();
-  });
-}
-
-if (createFolderBtn) {
-  createFolderBtn.addEventListener("click", () => {
-    const nomeCartella = prompt("Nome nuova cartella:")?.trim();
-    if (!nomeCartella) return alert("Nome non valido");
-    if (!aggiungiCartella(nomeCartella)) {
-      alert("Cartella già esistente o nome non valido.");
-    } else {
-      alert(`Cartella "${nomeCartella}" aggiunta.`);
-      renderMacchinari();
-    }
-  });
-}
-
 function creaMacchinarioManuale() {
   const nome = prompt("Inserire nome:")?.trim().toUpperCase();
   if (!nome) return;
@@ -447,21 +527,13 @@ function creaMacchinarioManuale() {
   }
 
   const id = "custom-" + Math.random().toString(36).substr(2, 9);
-  // Salva in cartella "Senza Cartella"
-  salvaMacchinario(id, nome, "Senza Cartella");
+  salvaMacchinario(id, nome);
   renderMacchinari(id);
 }
 
 document.getElementById("create-macchinario").addEventListener("click", creaMacchinarioManuale);
 
-// Inizializza cartelle se non esistono
-if (!savedCartelle.includes("Senza Cartella")) {
-  savedCartelle.push("Senza Cartella");
-  salvaCartelle();
-}
-
 Object.values(savedMacchinari).forEach(macch => macch.expanded = false);
-salvaMacchinari();
+localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
 
-aggiornaSelectCartelle();
 renderMacchinari();
