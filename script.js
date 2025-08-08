@@ -5,11 +5,113 @@ const stopBtn = document.getElementById("stop-scan");
 const searchInput = document.getElementById("search-input");
 const showAllBtn = document.getElementById("show-all-btn");
 
-let searchFilter = "";
-let savedMacchinari = JSON.parse(localStorage.getItem("macchinari") || "{}");
-let html5QrCode;
-let copiaNoteActive = false;
-let notaInModifica = null;
+const createBtn = document.getElementById("create-macchinario");
+const nomeModal = document.getElementById("nomeModal");
+const nomeInput = document.getElementById("nomeInput");
+const btnConferma = document.getElementById("btnConferma");
+const btnAnnulla = document.getElementById("btnAnnulla");
+const erroreNome = document.getElementById("erroreNome");
+
+//-------------------------------------------------------------------------------------------------//
+const urlParams = new URLSearchParams(window.location.search);
+let currentAnno = urlParams.get("id");
+
+let folders = JSON.parse(localStorage.getItem("folders") || "{}");
+
+// Funzione per salvare folders
+function salvaFolders() {
+  localStorage.setItem("folders", JSON.stringify(folders));
+}
+
+// Funzione per creare cartella nuova
+function creaCartella(nome) {
+  const id = nome.toUpperCase().trim();
+  if (!id) return false;
+  if (folders[id]) {
+    alert("Cartella già esistente");
+    return false;
+  }
+  folders[id] = { macchinari: {} };
+  salvaFolders();
+  currentAnno = id;
+  window.location.href = `index.html?id=${id}`;
+  return true;
+}
+
+// Funzione per chiedere se creare o no
+function confermaCreaCartella() {
+  const nome = prompt("Inserisci il nome della nuova cartella per le tue vecchie manutenzioni:");
+  if (!nome) {
+    alert("Nome non valido");
+    return;
+  }
+  if (creaCartella(nome)) {
+    alert("Cartella creata e aperta.");
+  }
+}
+
+// Funzione per eliminare la cartella attuale
+function confermaEliminaCartella() {
+  if (!currentAnno || !folders[currentAnno]) {
+    alert("Nessuna cartella da eliminare");
+    return;
+  }
+  const ok = confirm("Sei sicuro di voler eliminare questa cartella? NON potrai recuperarla.");
+  if (ok) {
+    delete folders[currentAnno];
+    salvaFolders();
+    alert("Cartella eliminata. Torni alla home.");
+    window.location.href = "home.html";
+  }
+}
+
+// Se la cartella non esiste, chiedi all’utente cosa fare
+if (!currentAnno || !folders[currentAnno]) {
+  const crea = confirm("Cartella non trovata. Vuoi crearla?");
+  if (crea) {
+    confermaCreaCartella();
+  } else {
+    const elimina = confirm("Vuoi eliminarla? Non sarà più recuperabile.");
+    if (elimina) {
+      confermaEliminaCartella();
+    } else {
+      window.location.href = "home.html";
+    }
+  }
+}
+
+// Dopo che la cartella è confermata:
+let savedMacchinari = folders[currentAnno]?.macchinari || {};
+if (!savedMacchinari) savedMacchinari = {};
+
+// Reset expanded = false ogni volta che si carica pagina
+Object.entries(savedMacchinari).forEach(([id, macch]) => {
+  savedMacchinari[id].expanded = false;
+});
+
+folders[currentAnno].macchinari = savedMacchinari;
+salvaFolders();
+//-------------------------------------------------------------------------------------------------//
+// --- MOSTRA ANNO SOTTO TITOLO ---
+function mostraAnnoCartella() {
+  const titoloTop = document.getElementById("titleTop");
+  if (!titoloTop) return;
+
+  const annoCartella = currentAnno;
+
+  const oldAnno = document.getElementById("annoSottoTitolo");
+  if (oldAnno) oldAnno.remove();
+
+  const divAnno = document.createElement("div");
+  divAnno.id = "annoSottoTitolo";
+  divAnno.textContent = `Anno cartella: ${annoCartella}`;
+  divAnno.style.fontSize = "1rem";
+  divAnno.style.color = "white";
+  divAnno.style.marginTop = "5px";
+  divAnno.style.fontWeight = "bold";
+
+  titoloTop.insertAdjacentElement("afterend", divAnno);
+}
 
 // --- MODAL PERSONALIZZATO PER CONFERME ---
 function mostraModalConferma(messaggio, onConferma, onAnnulla) {
@@ -18,26 +120,28 @@ function mostraModalConferma(messaggio, onConferma, onAnnulla) {
 
   const overlay = document.createElement("div");
   overlay.id = "custom-confirm-modal";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100vw";
-  overlay.style.height = "100vh";
-  overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
-  overlay.style.display = "flex";
-  overlay.style.justifyContent = "center";
-  overlay.style.alignItems = "center";
-  overlay.style.zIndex = "10000";
+  Object.assign(overlay.style, {
+    position: "fixed",
+    top: "0", left: "0",
+    width: "100vw", height: "100vh",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: "10000"
+  });
 
   const box = document.createElement("div");
-  box.style.backgroundColor = "#fff";
-  box.style.padding = "20px";
-  box.style.borderRadius = "8px";
-  box.style.width = "320px";
-  box.style.maxWidth = "90%";
-  box.style.textAlign = "center";
-  box.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
-  box.style.fontFamily = "Segoe UI, Tahoma, Geneva, Verdana, sans-serif";
+  Object.assign(box.style, {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "8px",
+    width: "320px",
+    maxWidth: "90%",
+    textAlign: "center",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+    fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif"
+  });
 
   const msg = document.createElement("p");
   msg.style.marginBottom = "20px";
@@ -46,45 +150,50 @@ function mostraModalConferma(messaggio, onConferma, onAnnulla) {
   box.appendChild(msg);
 
   const btnContainer = document.createElement("div");
-  btnContainer.style.display = "flex";
-  btnContainer.style.justifyContent = "center";
-  btnContainer.style.gap = "15px";
+  Object.assign(btnContainer.style, {
+    display: "flex",
+    justifyContent: "center",
+    gap: "15px"
+  });
 
-  const btnAnnulla = document.createElement("button");
-  btnAnnulla.textContent = "Annulla";
-  btnAnnulla.style.padding = "8px 16px";
-  btnAnnulla.style.border = "none";
-  btnAnnulla.style.backgroundColor = "#f44336";
-  btnAnnulla.style.color = "white";
-  btnAnnulla.style.borderRadius = "4px";
-  btnAnnulla.style.cursor = "pointer";
-  btnAnnulla.onclick = () => {
+  const btnAnnullaModal = document.createElement("button");
+  btnAnnullaModal.textContent = "Annulla";
+  Object.assign(btnAnnullaModal.style, {
+    padding: "8px 16px",
+    border: "none",
+    backgroundColor: "#f44336",
+    color: "white",
+    borderRadius: "4px",
+    cursor: "pointer"
+  });
+  btnAnnullaModal.onclick = () => {
     document.body.removeChild(overlay);
     if (onAnnulla) onAnnulla();
   };
 
-  const btnConferma = document.createElement("button");
-  btnConferma.textContent = "Conferma";
-  btnConferma.style.padding = "8px 16px";
-  btnConferma.style.border = "none";
-  btnConferma.style.backgroundColor = "#4CAF50";
-  btnConferma.style.color = "white";
-  btnConferma.style.borderRadius = "4px";
-  btnConferma.style.cursor = "pointer";
-  btnConferma.onclick = () => {
+  const btnConfermaModal = document.createElement("button");
+  btnConfermaModal.textContent = "Conferma";
+  Object.assign(btnConfermaModal.style, {
+    padding: "8px 16px",
+    border: "none",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    borderRadius: "4px",
+    cursor: "pointer"
+  });
+  btnConfermaModal.onclick = () => {
     document.body.removeChild(overlay);
     if (onConferma) onConferma();
   };
 
-  btnContainer.appendChild(btnAnnulla);
-  btnContainer.appendChild(btnConferma);
+  btnContainer.appendChild(btnAnnullaModal);
+  btnContainer.appendChild(btnConfermaModal);
   box.appendChild(btnContainer);
   overlay.appendChild(box);
-
   document.body.appendChild(overlay);
 }
-// --- FINE MODAL ---
 
+// --- FUNZIONI UTILI ---
 function createLineSeparator() {
   const line = document.createElement("div");
   line.className = "line-separator";
@@ -96,6 +205,7 @@ function formatData(d) {
   return `${dd}/${mm}/${yyyy.slice(2)}`;
 }
 
+// Crea area per copiare note
 function creaAreaCopiaNote(macchinarioBox, id, note) {
   const oldArea = macchinarioBox.querySelector(".copia-note-area");
   if (oldArea) oldArea.remove();
@@ -130,11 +240,13 @@ function creaAreaCopiaNote(macchinarioBox, id, note) {
   btnCopiaSelezionate.className = "btn-copia-selezionate";
 
   const btnContainer = document.createElement("div");
-  btnContainer.style.marginTop = "8px";
-  btnContainer.style.display = "flex";
-  btnContainer.style.justifyContent = "center";
-  btnContainer.style.flexWrap = "wrap";
-  btnContainer.style.gap = "6px";
+  Object.assign(btnContainer.style, {
+    marginTop: "8px",
+    display: "flex",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: "6px"
+  });
 
   btnContainer.appendChild(btnSelezionaTutte);
   btnContainer.appendChild(btnDeselezionaTutte);
@@ -148,7 +260,7 @@ function creaAreaCopiaNote(macchinarioBox, id, note) {
 
   function updateNoteButtonsAndCheckboxes(showCheckboxes) {
     const liNotes = macchinarioBox.querySelectorAll(".note-list li");
-    liNotes.forEach((li, i) => {
+    liNotes.forEach(li => {
       const checkbox = li.querySelector("input[type=checkbox]");
       const btns = li.querySelector(".btns-note");
       if (checkbox) checkbox.style.display = showCheckboxes ? "inline-block" : "none";
@@ -193,7 +305,6 @@ function creaAreaCopiaNote(macchinarioBox, id, note) {
         return `- [${formatData(n.data)}]: ${n.desc};`;
       }).join("\n");
 
-
     navigator.clipboard.writeText(testoDaCopiare).then(() => {
       alert("✅ Note copiate!");
       selezioneDiv.style.display = "none";
@@ -209,7 +320,7 @@ function renderMacchinari(highlightId = null) {
   listContainer.innerHTML = "";
 
   const filtered = Object.entries(savedMacchinari).filter(([_, data]) =>
-    data.nome.toLowerCase().startsWith(searchFilter.toLowerCase())
+    data.nome.toLowerCase().startsWith(searchInput.value.trim().toLowerCase())
   );
 
   const sorted = filtered.sort((a, b) =>
@@ -225,18 +336,17 @@ function renderMacchinari(highlightId = null) {
     box.innerHTML = `
       <h3>${data.nome}</h3>
       <div class="nome-e-btn">
-        <button class="toggle-btn" onclick="toggleDettagli('${id}')">
+        <button class="toggle-btn" data-id="${id}">
           ${expanded ? "🔽" : "🔼"}
         </button>
       </div>
     `;
 
+    box.querySelector(".toggle-btn").addEventListener("click", () => toggleDettagli(id));
+
     if (expanded) {
       box.appendChild(createLineSeparator());
 
-      // Qui invertito: prima inserimento note poi lista note
-
-      // Inserimento note
       const insertNoteTitle = document.createElement("h4");
       insertNoteTitle.textContent = "Inserimento Note";
       insertNoteTitle.className = "titolo-note";
@@ -250,15 +360,16 @@ function renderMacchinari(highlightId = null) {
         <label>Descrizione (max 300):</label>
         <input type="text" id="desc-${id}" maxlength="300">
         <div style="text-align:center; margin-top:10px;">
-          <button class="btn-green" onclick="aggiungiNota('${id}')">Conferma</button>
+          <button class="btn-green" id="btn-conferma-${id}">Conferma</button>
         </div>
       `;
 
       box.appendChild(noteForm);
 
+      noteForm.querySelector(`#btn-conferma-${id}`).addEventListener("click", () => aggiungiNota(id));
+
       box.appendChild(createLineSeparator());
 
-      // Lista note e area copia note solo se ci sono note
       if (data.note && data.note.length > 0) {
         const noteTitle = document.createElement("h4");
         noteTitle.textContent = "Note";
@@ -283,7 +394,7 @@ function renderMacchinari(highlightId = null) {
           checkbox.type = "checkbox";
           checkbox.className = "checkbox-copia-note";
           checkbox.value = index;
-          checkbox.style.display = copiaNoteActive ? "inline-block" : "none";
+          checkbox.style.display = "none";
 
           const testoNota = document.createElement("div");
           testoNota.style.flex = "1";
@@ -291,11 +402,11 @@ function renderMacchinari(highlightId = null) {
 
           const btns = document.createElement("div");
           btns.className = "btns-note";
+          btns.style.display = "flex";
           btns.innerHTML = `
-            <button class="btn-blue" onclick="modificaNota('${id}', ${index})">✏️</button>
-            <button class="btn-red" onclick="eliminaNota('${id}', ${index})">🗑️</button>
+            <button class="btn-blue btn-modifica" data-id="${id}" data-index="${index}">✏️</button>
+            <button class="btn-red btn-elimina" data-id="${id}" data-index="${index}">🗑️</button>
           `;
-          btns.style.display = copiaNoteActive ? "none" : "flex";
 
           li.appendChild(checkbox);
           li.appendChild(testoNota);
@@ -314,12 +425,34 @@ function renderMacchinari(highlightId = null) {
       const btnsContainer = document.createElement("div");
       btnsContainer.className = "btns-macchinario";
       btnsContainer.innerHTML = `
-        <button id="btn-rin" class="btn-blue" onclick="rinominaMacchinario('${id}')">✏️ Rinomina</button>
-        <button id="btn-chiudi" class="btn-orange" onclick="toggleDettagli('${id}')">❌ Chiudi</button>
-        <button class="btn-red" onclick="eliminaMacchinario('${id}')">🗑️ Elimina</button>
+        <div class="nome-e-btn">
+          <button class="btn-blue btn-rinomina" data-id="${id}">✏️ Rinomina</button>
+          <button class="btn-orange btn-chiudi" data-id="${id}">❌ Chiudi</button>
+          <button class="btn-red btn-elimina-macchinario" data-id="${id}">🗑️ Elimina</button>
+        </div>
       `;
 
       box.appendChild(btnsContainer);
+
+      btnsContainer.querySelector(".btn-rinomina").addEventListener("click", () => rinominaMacchinario(id));
+      btnsContainer.querySelector(".btn-chiudi").addEventListener("click", () => toggleDettagli(id));
+      btnsContainer.querySelector(".btn-elimina-macchinario").addEventListener("click", () => eliminaMacchinario(id));
+
+      box.querySelectorAll(".btn-modifica").forEach(btn =>
+        btn.addEventListener("click", (e) => {
+          const idMod = e.currentTarget.dataset.id;
+          const idx = Number(e.currentTarget.dataset.index);
+          modificaNota(idMod, idx);
+        })
+      );
+
+      box.querySelectorAll(".btn-elimina").forEach(btn =>
+        btn.addEventListener("click", (e) => {
+          const idEl = e.currentTarget.dataset.id;
+          const idx = Number(e.currentTarget.dataset.index);
+          eliminaNota(idEl, idx);
+        })
+      );
     }
 
     listContainer.appendChild(box);
@@ -343,16 +476,20 @@ function salvaMacchinario(id, nome) {
   } else {
     savedMacchinari[id].nome = nome;
   }
-  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
+  folders[currentAnno].macchinari = savedMacchinari;
+  localStorage.setItem("folders", JSON.stringify(folders));
 }
 
 function toggleDettagli(id) {
+  if (!savedMacchinari[id]) return;
   savedMacchinari[id].expanded = !savedMacchinari[id].expanded;
-  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
+  folders[currentAnno].macchinari = savedMacchinari;
+  localStorage.setItem("folders", JSON.stringify(folders));
   renderMacchinari();
 }
 
 function rinominaMacchinario(id) {
+  if (!savedMacchinari[id]) return;
   const nuovoNome = prompt("Nuovo nome:", savedMacchinari[id].nome)?.trim().toUpperCase();
   if (!nuovoNome) return;
 
@@ -366,174 +503,245 @@ function rinominaMacchinario(id) {
   }
 
   savedMacchinari[id].nome = nuovoNome;
-  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
+  folders[currentAnno].macchinari = savedMacchinari;
+  localStorage.setItem("folders", JSON.stringify(folders));
   renderMacchinari();
 }
 
 function eliminaMacchinario(id) {
+  if (!savedMacchinari[id]) return;
   const nome = savedMacchinari[id].nome;
   mostraModalConferma(
     `Sei sicuro di voler eliminare "${nome}"?`,
     () => {
       delete savedMacchinari[id];
-      localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
+      folders[currentAnno].macchinari = savedMacchinari;
+      localStorage.setItem("folders", JSON.stringify(folders));
       renderMacchinari();
-    },
+    }
+  );
+}
+
+let notaInModifica = null;
+
+function modificaNota(id, index) {
+  if (!savedMacchinari[id]) return;
+  const nota = savedMacchinari[id].note[index];
+  if (!nota) return;
+
+  // Se stai già modificando questa nota → annulla modifica (toggle OFF)
+  if (notaInModifica && notaInModifica.id === id && notaInModifica.index === index) {
+    const box = document.querySelector(`.macchinario[data-id="${id}"]`);
+    if (!box) return;
+
+    const dataInput = box.querySelector(`#data-${id}`);
+    const descInput = box.querySelector(`#desc-${id}`);
+
+    // Svuota gli input
+    dataInput.value = "";
+    descInput.value = "";
+
+    notaInModifica = null;
+    return;
+  }
+
+  // Altrimenti, attiva la modifica per questa nota (toggle ON)
+  notaInModifica = { id, index };
+
+  const box = document.querySelector(`.macchinario[data-id="${id}"]`);
+  if (!box) return;
+
+  const dataInput = box.querySelector(`#data-${id}`);
+  const descInput = box.querySelector(`#desc-${id}`);
+
+  dataInput.value = nota.data;
+  descInput.value = nota.desc;
+}
+
+function eliminaNota(id, index) {
+  if (!savedMacchinari[id]) return;
+  const nome = savedMacchinari[id].nome;
+  mostraModalConferma(
+    `Sei sicuro di voler eliminare questa nota di "${nome}"?`,
     () => {
-      // Annullato: niente
+      savedMacchinari[id].note.splice(index, 1);
+      if (savedMacchinari[id].note.length === 0) {
+        savedMacchinari[id].expanded = false;
+      }
+      folders[currentAnno].macchinari = savedMacchinari;
+      localStorage.setItem("folders", JSON.stringify(folders));
+      renderMacchinari();
     }
   );
 }
 
 function aggiungiNota(id) {
-  const data = document.getElementById(`data-${id}`).value;
-  const desc = document.getElementById(`desc-${id}`).value.trim();
-  if (!data || !desc) return;
+  if (!savedMacchinari[id]) return;
+
+  const box = document.querySelector(`.macchinario[data-id="${id}"]`);
+  if (!box) return;
+
+  const dataInput = box.querySelector(`#data-${id}`);
+  const descInput = box.querySelector(`#desc-${id}`);
+
+  const data = dataInput.value;
+  const desc = descInput.value.trim();
+
+  if (!data) {
+    alert("Inserisci una data valida.");
+    return;
+  }
+  if (!desc) {
+    alert("Inserisci una descrizione.");
+    return;
+  }
+
+  if (!savedMacchinari[id].note) savedMacchinari[id].note = [];
 
   if (notaInModifica && notaInModifica.id === id) {
-    // MODIFICA
     savedMacchinari[id].note[notaInModifica.index] = { data, desc };
     notaInModifica = null;
   } else {
-    // AGGIUNGI NUOVA
-    savedMacchinari[id].note = savedMacchinari[id].note || [];
     savedMacchinari[id].note.push({ data, desc });
   }
 
-  document.getElementById(`data-${id}`).value = "";
-  document.getElementById(`desc-${id}`).value = "";
-  localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
+  savedMacchinari[id].expanded = true;
+  folders[currentAnno].macchinari = savedMacchinari;
+  localStorage.setItem("folders", JSON.stringify(folders));
+  renderMacchinari(id);
+}
+
+// --- RICERCA E MOSTRA TUTTI ---
+
+searchInput.addEventListener("input", e => {
   renderMacchinari();
-}
+});
 
-function modificaNota(id, index) {
-  const dataInput = document.getElementById(`data-${id}`);
-  const descInput = document.getElementById(`desc-${id}`);
-  const nota = savedMacchinari[id].note[index];
+showAllBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  renderMacchinari();
+});
 
-  // Se stai già modificando questa stessa nota → svuota e annulla
-  if (notaInModifica && notaInModifica.id === id && notaInModifica.index === index) {
-    dataInput.value = "";
-    descInput.value = "";
-    notaInModifica = null;
-  } else {
-    // Altrimenti avvia modifica
-    dataInput.value = nota.data;
-    descInput.value = nota.desc;
-    notaInModifica = { id, index };
+// --- CREAZIONE MACCHINARIO E MODAL ---
+
+createBtn.addEventListener("click", () => {
+  nomeInput.value = "";
+  erroreNome.style.display = "none";
+  nomeModal.classList.remove("hidden");
+  nomeInput.focus();
+});
+
+btnAnnulla.addEventListener("click", () => {
+  nomeModal.classList.add("hidden");
+  erroreNome.style.display = "none";
+});
+
+btnConferma.addEventListener("click", () => {
+  const nome = nomeInput.value.trim().toUpperCase();
+  if (!nome) {
+    alert("Inserisci un nome valido.");
+    return;
   }
-}
 
-function eliminaNota(id, index) {
-  const nota = savedMacchinari[id].note[index];
-  const parole = nota.desc.trim().split(/\s+/);
-  const descBreve = parole.length > 10 ? parole.slice(0, 10).join(" ") + "..." : nota.desc;
+  const esisteGia = Object.values(savedMacchinari).some(m => m.nome === nome);
+  if (esisteGia) {
+    erroreNome.style.display = "block";
+    return;
+  }
 
-  mostraModalConferma(
-    `Vuoi davvero eliminare la nota del ${formatData(nota.data)}?\n\n"${descBreve}"`,
-    () => {
-      savedMacchinari[id].note.splice(index, 1);
-      localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
-      renderMacchinari();
-    },
-    () => {
-      // Annullato: niente
-    }
-  );
-}
+  const id = Date.now().toString();
+  savedMacchinari[id] = { nome, note: [], expanded: true };
+  folders[currentAnno].macchinari = savedMacchinari;
+  localStorage.setItem("folders", JSON.stringify(folders));
 
-function startScan() {
-  reader.classList.remove("hidden");
+  nomeModal.classList.add("hidden");
+  erroreNome.style.display = "none";
+
+  renderMacchinari(id);
+});
+
+// --- SCANSIONE QR CODE ---
+
+let html5QrCode = null;
+
+startBtn.addEventListener("click", () => {
   startBtn.disabled = true;
   stopBtn.disabled = false;
+  reader.classList.remove("hidden");
 
-  html5QrCode = new Html5Qrcode("reader");
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("reader");
+  }
 
-  html5QrCode.start(
-    { facingMode: { exact: "environment" } },
-    { fps: 10, qrbox: 250 },
-    (qrCodeMessage) => {
-      html5QrCode.stop().then(() => {
-        reader.classList.add("hidden");
+  Html5Qrcode.getCameras().then(cameras => {
+    if (cameras && cameras.length) {
+      // Prova a prendere una camera posteriore se disponibile
+      const backCam = cameras.find(cam =>
+        cam.label.toLowerCase().includes("back") ||
+        cam.label.toLowerCase().includes("post") ||
+        cam.label.toLowerCase().includes("rear")
+      );
+
+      const cameraId = backCam ? backCam.id : cameras[0].id;
+
+      html5QrCode.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          gestioneScan(qrCodeMessage);
+        },
+        errorMessage => {
+          // errore di scansione (puoi anche ignorare)
+        }
+      ).catch(err => {
+        alert(`Errore avvio scansione: ${err}`);
         startBtn.disabled = false;
         stopBtn.disabled = true;
+        reader.classList.add("hidden");
       });
-
-      if (!savedMacchinari[qrCodeMessage]) {
-        function chiediNome() {
-          const nome = prompt("Nome:")?.trim().toUpperCase();
-          if (!nome) return;
-
-          const esisteGia = Object.values(savedMacchinari).some(
-            m => m.nome.toUpperCase() === nome
-          );
-
-          if (esisteGia) {
-            alert("⚠️ Nome già esistente. Inserisci un nome diverso.");
-            chiediNome();
-          } else {
-            salvaMacchinario(qrCodeMessage, nome);
-            renderMacchinari(qrCodeMessage);
-          }
-        }
-        chiediNome();
-      } else {
-        savedMacchinari[qrCodeMessage].expanded = true;
-        renderMacchinari(qrCodeMessage);
-      }
+    } else {
+      alert("Nessuna fotocamera trovata.");
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      reader.classList.add("hidden");
     }
-  ).catch((err) => {
-    alert("Errore nell'avvio della fotocamera: " + err);
+  }).catch(err => {
+    alert(`Errore fotocamera: ${err}`);
     startBtn.disabled = false;
     stopBtn.disabled = true;
+    reader.classList.add("hidden");
   });
-}
+});
 
-function stopScan() {
+stopBtn.addEventListener("click", () => {
   if (html5QrCode) {
     html5QrCode.stop().then(() => {
+      html5QrCode.clear();
       reader.classList.add("hidden");
       startBtn.disabled = false;
       stopBtn.disabled = true;
     });
   }
-}
-
-startBtn.addEventListener("click", startScan);
-stopBtn.addEventListener("click", stopScan);
-
-searchInput.addEventListener("input", () => {
-  searchFilter = searchInput.value.trim();
-  renderMacchinari();
 });
 
-showAllBtn.addEventListener("click", () => {
-  searchFilter = "";
-  searchInput.value = "";
-  renderMacchinari();
-});
-
-function creaMacchinarioManuale() {
-  const nome = prompt("Inserire nome:")?.trim().toUpperCase();
+function gestioneScan(text) {
+  const nome = text.trim().toUpperCase();
   if (!nome) return;
 
-  const esisteGia = Object.values(savedMacchinari).some(
-    m => m.nome.toUpperCase() === nome
-  );
-
+  const esisteGia = Object.values(savedMacchinari).some(m => m.nome === nome);
   if (esisteGia) {
-    alert("⚠️ Nome già esistente. Inserisci un nome diverso.");
+    alert(`Macchinario "${nome}" già presente.`);
     return;
   }
 
-  const id = "custom-" + Math.random().toString(36).substr(2, 9);
-  salvaMacchinario(id, nome);
+  const id = Date.now().toString();
+  savedMacchinari[id] = { nome, note: [], expanded: false };
+  folders[currentAnno].macchinari = savedMacchinari;
+  localStorage.setItem("folders", JSON.stringify(folders));
   renderMacchinari(id);
 }
 
-document.getElementById("create-macchinario").addEventListener("click", creaMacchinarioManuale);
-
-Object.values(savedMacchinari).forEach(macch => macch.expanded = false);
-localStorage.setItem("macchinari", JSON.stringify(savedMacchinari));
-
-renderMacchinari();
+window.addEventListener("DOMContentLoaded", () => {
+  renderMacchinari();
+  mostraAnnoCartella();
+});

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Prova</title>
+  <link rel="stylesheet" href="home.css" />
+  <script>
+    // Blocca zoom touch su mobile (pinch)
+    document.addEventListener('touchmove', function (event) {
+      if (event.scale !== 1) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('gesturestart', function (event) {
+      event.preventDefault();
+    });
+  </script>
+</head>
+<body>
+    
+  <h1>CARTE DOZIO<br>MANUTENZIONI</h1>
+    
+  <button id="btn-add-folder" aria-label="Crea nuova cartella">
+    ➕ Nuova Cartella
+  </button>
+
+  <div id="folders-list"></div>  
+
+  <script src="home.js" defer></script>
+</body>
+</html>
